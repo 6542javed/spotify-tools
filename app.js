@@ -2,15 +2,16 @@ const express = require('express');
 const request = require('request');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
+const serverless = require('serverless-http');
 
 const app = express();
 app.use(express.json()); // For parsing JSON bodies
 app.use(cookieParser());
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/../public')); // Adjust path to public folder
 
 const client_id = 'afa4fce3901e4cf68cc3177f17207fdf';
 const client_secret = 'b30f2385d0104de3b57afe1e425c1e5a';
-const redirect_uri = 'http://localhost:8888/callback';
+const redirect_uri = 'https://YOUR_VERCEL_DEPLOYMENT_URL/api/callback'; // Update this once deployed
 
 const generateRandomString = length => {
   let text = '';
@@ -23,9 +24,9 @@ const generateRandomString = length => {
 
 const stateKey = 'spotify_auth_state';
 
-// Serve landing page at the root
+// Serve landing page at the root (if needed, adjust route)
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/landing.html');
+  res.sendFile(__dirname + '/../public/landing.html');
 });
 
 app.get('/login', (req, res) => {
@@ -258,9 +259,8 @@ app.post('/api/create_playlist', (req, res) => {
 });
 
 app.get('/dashboard', (req, res) => {
-  // Serve the dashboard UI
-  res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(__dirname + '/../public/index.html');
 });
 
-console.log('Listening on 8888');
-app.listen(8888);
+// Instead of listening on a port, export the serverless handler
+module.exports = serverless(app);
