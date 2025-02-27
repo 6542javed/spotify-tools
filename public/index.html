@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Spotify Liked Songs Filter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px;
+    }
+    #songs {
+      margin-top: 20px;
+    }
+    /* Spinner styles for loading indicator */
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #09f;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    #loading {
+      display: none;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>Filter Your Liked Songs</h1>
+  <input type="text" id="searchInput" placeholder="Enter search term">
+  <button id="searchBtn">Search</button>
+  <button id="createPlaylistBtn">Create Playlist</button>
+  
+  <!-- Loading indicator -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+  
+  <div id="songs"></div>
+  
+  <script>
+    const searchBtn = document.getElementById('searchBtn');
+    const createPlaylistBtn = document.getElementById('createPlaylistBtn');
+    const searchInput = document.getElementById('searchInput');
+    const songsDiv = document.getElementById('songs');
+    const loadingDiv = document.getElementById('loading');
+    
+    // Display songs in a table with columns for Song, Artists, and Album
+    function displaySongs(songs) {
+      let html = '<table>';
+      html += '<tr><th>Song</th><th>Artists</th><th>Album</th></tr>';
+      songs.forEach(song => {
+        html += `<tr>
+                  <td>${song.name}</td>
+                  <td>${song.artists.join(', ')}</td>
+                  <td>${song.album}</td>
+                </tr>`;
+      });
+      html += '</table>';
+      songsDiv.innerHTML = html;
+    }
+    
+    // Search for liked songs using the search API
+    searchBtn.addEventListener('click', () => {
+      const query = searchInput.value.trim();
+      loadingDiv.style.display = 'block';
+      fetch(`/api/search?query=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+          loadingDiv.style.display = 'none';
+          if (data.songs) {
+            displaySongs(data.songs);
+          } else {
+            songsDiv.innerHTML = '<p>Error fetching songs.</p>';
+          }
+        })
+        .catch(err => {
+          loadingDiv.style.display = 'none';
+          console.error(err);
+          songsDiv.innerHTML = '<p>Error fetching songs.</p>';
+        });
+    });
+    
+    // Create a playlist based on the filtered songs
+    createPlaylistBtn.addEventListener('click', () => {
+      const query = searchInput.value.trim();
+      const playlistName = prompt("Enter a name for your new playlist:", "Filtered Playlist");
+      if (!playlistName) return;
+      
+      fetch('/api/create_playlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query, playlistName })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.playlistUrl) {
+          alert('Playlist created successfully!');
+          window.open(data.playlistUrl, '_blank');
+        } else {
+          alert('Error creating playlist.');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Error creating playlist.');
+      });
+    });
+  </script>
+</body>
+</html>
